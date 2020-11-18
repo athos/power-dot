@@ -2,6 +2,55 @@
 
 A PoC library for Clojure that lets you make friends with SAM types
 
+## Example
+
+```clojure
+(require '[power-dot.core :as dot])
+(import '[java.util.stream IntStream])
+
+(dot/. (IntStream/range 0 10) (forEach (fn [x] (println x))))
+;; 0
+;; 1
+;; 2
+;; 3
+;; 4
+;; 5
+;; 6
+;; 7
+;; 8
+;; 9
+;=> nil
+
+(dot/.. (IntStream/range 0 10)
+        (filter #(even? %))
+        (forEach #(println %)))
+;; 0
+;; 2
+;; 4
+;; 6
+;; 8
+;=> nil
+
+(letfn [(fib [n]
+          (if (<= n 1)
+            n
+            (+ (fib (- n 1)) (fib (- n 2)))))]
+  (dot/.. (IntStream/range 0 10)
+          (map fib)
+          (forEach #(println %))))
+;; 0
+;; 1
+;; 1
+;; 2
+;; 3
+;; 5
+;; 8
+;; 13
+;; 21
+;; 34
+;=> nil
+```
+
 ## Usage
 
 FIXME
