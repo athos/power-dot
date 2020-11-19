@@ -22,13 +22,12 @@ A PoC library for Clojure that lets you make friends with SAM types
 ;=> nil
 
 (dot/.. (IntStream/range 0 10)
-        (filter #(even? %))
-        (forEach #(println %)))
+        (filter #(= (mod % 3) 0))
+        (forEach println))
 ;; 0
-;; 2
-;; 4
+;; 3
 ;; 6
-;; 8
+;; 9
 ;=> nil
 
 (letfn [(fib [n]
@@ -37,7 +36,7 @@ A PoC library for Clojure that lets you make friends with SAM types
             (+ (fib (- n 1)) (fib (- n 2)))))]
   (dot/.. (IntStream/range 0 10)
           (map fib)
-          (forEach #(println %))))
+          (forEach println)))
 ;; 0
 ;; 1
 ;; 1
