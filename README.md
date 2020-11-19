@@ -1,6 +1,6 @@
 # power-dot
 
-A PoC library for Clojure that lets you make friends with SAM types
+A PoC library for Clojure that helps you make friends with Java's functional interfaces
 
 ## Example
 
