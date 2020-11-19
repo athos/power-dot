@@ -91,15 +91,13 @@
           (~arg ~@param-syms))))
     arg))
 
-(defn- fixup-args [param-types arg-types args]
-  (map fixup-arg param-types arg-types args))
-
 (defmacro dot* [target method-name & args]
   (let [target-type (infer-type &env target)
         arg-types (map (partial infer-type &env) args)]
-    (if-let [^Method m (get-matching-method target-type (str method-name) arg-types)]
-      `(. ~target ~method-name ~@(fixup-args (.getParameterTypes m) arg-types args))
-      `(. ~target ~method-name ~@args))))
+    `(. ~target ~method-name
+        ~@(if-let [^Method m (get-matching-method target-type (str method-name) arg-types)]
+            (map fixup-arg (.getParameterTypes m) arg-types args)
+            args))))
 
 (defmacro . [target [mname & args]]
   (let [tsym (gensym 'target)
