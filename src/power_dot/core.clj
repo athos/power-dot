@@ -102,7 +102,8 @@
                         (when (and (var? v) (function-type? (class @v)))
                           (class @v)))))]
     `(. ~target ~method-name
-        ~@(if-let [^Method m (get-matching-method target-type (str method-name) arg-types)]
+        ~@(if-let [^Method m (some-> target-type
+                                     (get-matching-method (str method-name) arg-types))]
             (map fixup-arg (.getParameterTypes m) arg-types args)
             args))))
 
