@@ -1,6 +1,6 @@
 (ns power-dot.core
   (:refer-clojure :exclude [..])
-  (:import [clojure.lang Compiler$LocalBinding]
+  (:import [clojure.lang AFunction Compiler$LocalBinding]
            [clojure.lang Reflector]
            [java.lang.reflect Method Modifier]
            [java.util Arrays]))
@@ -19,8 +19,7 @@
         (if (= p a)
           (recur (next params) (next args) (inc exact))
           (when (or (Reflector/paramArgTypeMatch p a)
-                    (and (= a clojure.lang.AFunction)
-                         (sam-type? p)))
+                    (and (= a AFunction) (sam-type? p)))
             (recur (next params) (next args) exact))))
       exact)))
 
@@ -80,7 +79,7 @@
       (.getJavaClass lb))))
 
 (defn- fixup-arg [^Class param-type arg-type arg]
-  (if (and (= arg-type clojure.lang.AFunction)
+  (if (and (= arg-type AFunction)
            (sam-type? param-type))
     (let [^Method m (->> (.getMethods param-type)
                          (filter #(Modifier/isAbstract (.getModifiers ^Method %)))
@@ -93,7 +92,12 @@
 
 (defmacro dot* [target method-name & args]
   (let [target-type (infer-type &env target)
-        arg-types (map (partial infer-type &env) args)]
+        arg-types (for [arg args]
+                    (if (contains? &env arg)
+                      (infer-type &env arg)
+                      (when-let [v (resolve arg)]
+                        (when (and (var? v) (:arglists (meta v)))
+                          AFunction))))]
     `(. ~target ~method-name
         ~@(if-let [^Method m (get-matching-method target-type (str method-name) arg-types)]
             (map fixup-arg (.getParameterTypes m) arg-types args)
@@ -101,10 +105,15 @@
 
 (defmacro . [target [mname & args]]
   (let [tsym (gensym 'target)
-        asyms (map (fn [_] (gensym 'arg)) args)]
+        asyms (for [arg args]
+                (when-not (symbol? arg)
+                  (gensym 'arg)))]
     `(let [~tsym ~target
-           ~@(mapcat (fn [asym arg] [asym arg]) asyms args)]
-       (dot* ~tsym ~mname ~@asyms))))
+           ~@(mapcat (fn [asym arg]
+                       (when asym [asym arg]))
+                     asyms args)]
+       (dot* ~tsym ~mname
+             ~@(map (fn [asym arg] (or asym arg)) asyms args)))))
 
 (defmacro ..
   ([x form] `(power-dot.core/. ~x ~form))
