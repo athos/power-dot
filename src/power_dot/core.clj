@@ -1,6 +1,6 @@
 (ns power-dot.core
   (:refer-clojure :exclude [..])
-  (:import [clojure.lang AFunction Compiler$LocalBinding]
+  (:import [clojure.lang Compiler$LocalBinding]
            [clojure.lang Reflector]
            [java.lang.reflect Method Modifier]
            [java.util Arrays]))
@@ -8,6 +8,9 @@
 (defn- sam-type? [^Class c]
   ;;FIXME: It's not definition of SAM type
   (.isAnnotationPresent c java.lang.FunctionalInterface))
+
+(defn- function-type? [c]
+  (isa? c clojure.lang.AFn))
 
 (defn- params-match? [params args]
   (loop [params params
@@ -19,7 +22,7 @@
         (if (= p a)
           (recur (next params) (next args) (inc exact))
           (when (or (Reflector/paramArgTypeMatch p a)
-                    (and (= a AFunction) (sam-type? p)))
+                    (and (function-type? a) (sam-type? p)))
             (recur (next params) (next args) exact))))
       exact)))
 
@@ -79,7 +82,7 @@
       (.getJavaClass lb))))
 
 (defn- fixup-arg [^Class param-type arg-type arg]
-  (if (and (= arg-type AFunction)
+  (if (and (function-type? arg-type)
            (sam-type? param-type))
     (let [^Method m (->> (.getMethods param-type)
                          (filter #(Modifier/isAbstract (.getModifiers ^Method %)))
@@ -96,8 +99,8 @@
                     (if (contains? &env arg)
                       (infer-type &env arg)
                       (when-let [v (resolve arg)]
-                        (when (and (var? v) (:arglists (meta v)))
-                          AFunction))))]
+                        (when (and (var? v) (function-type? (class @v)))
+                          (class @v)))))]
     `(. ~target ~method-name
         ~@(if-let [^Method m (get-matching-method target-type (str method-name) arg-types)]
             (map fixup-arg (.getParameterTypes m) arg-types args)
