@@ -83,7 +83,10 @@
 
 (defn- fixup-arg [^Class param-type arg-type arg]
   (if (and (function-type? arg-type)
-           (sam-type? param-type))
+           (sam-type? param-type)
+           ;; if arg type is a descedant of param type, no need to wrap arg
+           ;; with anonymous adapter class
+           (not (isa? arg-type param-type)))
     (let [^Method m (->> (.getMethods param-type)
                          (filter #(Modifier/isAbstract (.getModifiers ^Method %)))
                          first)
