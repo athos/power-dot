@@ -65,8 +65,8 @@
                     :else (recur (inc i) match-idx tied found-exact?))
               :else (recur (inc i) match-idx tied found-exact?))))))
 
-(defn- get-matching-method [target-type method-name args]
-  (let [methods (Reflector/getMethods target-type (count args) method-name false)]
+(defn- get-matching-method [static? target-type method-name args]
+  (let [methods (Reflector/getMethods target-type (count args) method-name static?)]
     (when (seq methods)
       (let [param-lists (mapv #(.getParameterTypes ^Method %) methods)
             rets (mapv #(.getReturnType ^Method %) methods)
@@ -96,8 +96,10 @@
           (~arg ~@param-syms))))
     arg))
 
-(defmacro dot* [target method-name & args]
-  (let [target-type (infer-type &env target)
+(defmacro dot* [static? target method-name & args]
+  (let [target-type (if static?
+                      (resolve target)
+                      (infer-type &env target))
         arg-types (for [arg args]
                     (if (contains? &env arg)
                       (infer-type &env arg)
@@ -105,8 +107,9 @@
                         (when (and (var? v) (function-type? (class @v)))
                           (class @v)))))]
     `(. ~target ~method-name
-        ~@(if-let [^Method m (some-> target-type
-                                     (get-matching-method (str method-name) arg-types))]
+        ~@(if-let [^Method m (when target-type
+                               (get-matching-method static? target-type
+                                                    (str method-name) arg-types))]
             (map fixup-arg (.getParameterTypes m) arg-types args)
             args))))
 
@@ -114,15 +117,18 @@
   (if (and (= (count args) 1) (seq? (first args)))
     `(power-dot.core/. ~target ~@(first args))
     (let [[mname & args] args
+          static? (and (symbol? target)
+                       (class? (resolve target)))
           tsym (gensym 'target)
           asyms (for [arg args]
                   (when-not (symbol? arg)
                     (gensym 'arg)))]
-      `(let [~tsym ~target
+      `(let [~@(when-not static?
+                 [tsym target])
              ~@(mapcat (fn [asym arg]
                          (when asym [asym arg]))
                        asyms args)]
-         (dot* ~tsym ~mname
+         (dot* ~static? ~(if static? target tsym) ~mname
                ~@(map (fn [asym arg] (or asym arg)) asyms args))))))
 
 (defmacro ..
