@@ -110,20 +110,20 @@
             (map fixup-arg (.getParameterTypes m) arg-types args)
             args))))
 
-(defmacro .
-  ([target [mname & args]]
-   `(power-dot.core/. ~target ~mname ~@args))
-  ([target mname & args]
-   (let [tsym (gensym 'target)
-         asyms (for [arg args]
-                 (when-not (symbol? arg)
-                   (gensym 'arg)))]
-     `(let [~tsym ~target
-            ~@(mapcat (fn [asym arg]
-                        (when asym [asym arg]))
-                      asyms args)]
-        (dot* ~tsym ~mname
-              ~@(map (fn [asym arg] (or asym arg)) asyms args))))))
+(defmacro . [target & args]
+  (if (and (= (count args) 1) (seq? (first args)))
+    `(power-dot.core/. ~target ~@(first args))
+    (let [[mname & args] args
+          tsym (gensym 'target)
+          asyms (for [arg args]
+                  (when-not (symbol? arg)
+                    (gensym 'arg)))]
+      `(let [~tsym ~target
+             ~@(mapcat (fn [asym arg]
+                         (when asym [asym arg]))
+                       asyms args)]
+         (dot* ~tsym ~mname
+               ~@(map (fn [asym arg] (or asym arg)) asyms args))))))
 
 (defmacro ..
   ([x form] `(power-dot.core/. ~x ~form))
