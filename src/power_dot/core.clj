@@ -67,7 +67,9 @@
 
 (defn- get-matching-method [static? target-type method-name args]
   (let [methods (Reflector/getMethods target-type (count args) method-name static?)]
-    (when (seq methods)
+    (case (count methods)
+      0 nil
+      1 (first methods)
       (let [param-lists (mapv #(.getParameterTypes ^Method %) methods)
             rets (mapv #(.getReturnType ^Method %) methods)
             method-idx (get-matching-params method-name param-lists args rets)]
