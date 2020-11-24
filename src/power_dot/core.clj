@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [..])
   (:import [clojure.lang Compiler$LocalBinding]
            [clojure.lang Reflector]
-           [java.lang.reflect Method Modifier]
+           [java.lang.reflect Constructor Method Modifier]
            [java.util Arrays]))
 
 (defn- sam-type? [^Class c]
@@ -78,10 +78,29 @@
             m
             (Reflector/getAsMethodOfPublicBase (.getDeclaringClass m) m)))))))
 
+(defn- get-matching-ctor [^Class target-type args]
+  (let [ctors (->> (.getConstructors target-type)
+                   (filterv (fn [^Constructor ctor]
+                              (= (.getParameterCount ctor) (count args)))))]
+    (case (count ctors)
+      0 nil
+      1 (first ctors)
+      (let [param-lists (mapv #(.getParameterTypes ^Constructor %) ctors)
+            rets (into [] (map (constantly target-type)) ctors)
+            ctor-idx (get-matching-params (.getName target-type) param-lists args rets)]
+        (when (>= ctor-idx 0) (nth ctors ctor-idx))))))
+
 (defn- infer-type [&env sym]
   (let [^Compiler$LocalBinding lb (get &env sym)]
     (when (.hasJavaClass lb)
       (.getJavaClass lb))))
+
+(defn- infer-arg-type [&env sym]
+  (if (contains? &env sym)
+    (infer-type &env sym)
+    (when-let [v (resolve sym)]
+      (when (and (var? v) (function-type? (class @v)))
+        (class @v)))))
 
 (defn- fixup-arg [^Class param-type arg-type arg]
   (if (and (function-type? arg-type)
@@ -99,15 +118,8 @@
     arg))
 
 (defmacro dot* [static? target method-name & args]
-  (let [target-type (if static?
-                      (resolve target)
-                      (infer-type &env target))
-        arg-types (for [arg args]
-                    (if (contains? &env arg)
-                      (infer-type &env arg)
-                      (when-let [v (resolve arg)]
-                        (when (and (var? v) (function-type? (class @v)))
-                          (class @v)))))]
+  (let [target-type (if static? (resolve target) (infer-type &env target))
+        arg-types (map (partial infer-arg-type &env) args)]
     `(. ~target ~method-name
         ~@(if-let [^Method m (when target-type
                                (get-matching-method static? target-type
@@ -132,6 +144,21 @@
                        asyms args)]
          (dot* ~static? ~(if static? target tsym) ~mname
                ~@(map (fn [asym arg] (or asym arg)) asyms args))))))
+
+(defmacro new* [c & args]
+  (let [target-type (resolve c)
+        arg-types (map (partial infer-arg-type &env) args)]
+    `(new ~c
+          ~@(if-let [^Constructor ctor (some-> target-type (get-matching-ctor arg-types))]
+              (map fixup-arg (.getParameterTypes ctor) arg-types args)
+              args))))
+
+(defmacro new [c & args]
+  (let [asyms (for [arg args]
+                (when-not (symbol? arg)
+                  (gensym 'arg)))]
+    `(let [~@(mapcat (fn [asym arg] (when asym [asym arg])) asyms args)]
+       (new* ~c ~@(map (fn [asym arg] (or asym arg)) asyms args)))))
 
 (defmacro ..
   ([x form] `(power-dot.core/. ~x ~form))
