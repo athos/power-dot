@@ -102,9 +102,14 @@
       (when (and (var? v) (function-type? (class @v)))
         (class @v)))))
 
-(defn- fixup-arg [^Class param-type arg-type arg]
-  (if (and (function-type? arg-type)
-           (sam-type? param-type)
+(defn- hinted-arg-type [arg]
+  (some-> arg meta :tag resolve))
+
+(defn- fixup-arg [^Class param-type arg-type hinted-type arg]
+  (if (and (not= param-type arg-type)
+           (or (and (function-type? arg-type)
+                    (sam-type? param-type))
+               (sam-type? hinted-type))
            ;; if arg type is a descedant of param type, no need to wrap arg
            ;; with anonymous adapter class
            (not (isa? arg-type param-type)))
@@ -114,17 +119,29 @@
           param-syms (repeatedly (.getParameterCount m) (partial gensym 'param))]
       `(reify ~(symbol (.getName param-type))
          (~(symbol (.getName m)) [_# ~@param-syms]
-          (~arg ~@param-syms))))
+          (~(with-meta arg nil) ~@param-syms))))
     arg))
+
+(defn- strip-tag [x]
+  (if (instance? clojure.lang.IObj x)
+    (vary-meta x dissoc :tag)
+    x))
+
+(defn- inherit-tag [x y]
+  (if-let [t (:tag (meta y))]
+    (with-meta x {:tag t})
+    x))
 
 (defmacro dot* [static? target method-name & args]
   (let [target-type (if static? (resolve target) (infer-type &env target))
-        arg-types (map (partial infer-arg-type &env) args)]
+        arg-types (map (partial infer-arg-type &env) args)
+        coerced-arg-types (map #(or (hinted-arg-type %1) %2) args arg-types)]
     `(. ~target ~method-name
         ~@(if-let [^Method m (when target-type
                                (get-matching-method static? target-type
-                                                    (str method-name) arg-types))]
-            (map fixup-arg (.getParameterTypes m) arg-types args)
+                                                    (str method-name)
+                                                    coerced-arg-types))]
+            (map fixup-arg (.getParameterTypes m) arg-types coerced-arg-types args)
             args))))
 
 (defmacro . [target & args]
@@ -140,25 +157,35 @@
       `(let [~@(when-not static?
                  [tsym target])
              ~@(mapcat (fn [asym arg]
-                         (when asym [asym arg]))
+                         (when asym [asym (strip-tag arg)]))
                        asyms args)]
          (dot* ~static? ~(if static? target tsym) ~mname
-               ~@(map (fn [asym arg] (or asym arg)) asyms args))))))
+               ~@(map (fn [asym arg]
+                        (or (some-> asym (inherit-tag arg))
+                            arg))
+                      asyms args))))))
 
 (defmacro new* [c & args]
   (let [target-type (resolve c)
-        arg-types (map (partial infer-arg-type &env) args)]
+        arg-types (map (partial infer-arg-type &env) args)
+        coerced-arg-types (map #(or (hinted-arg-type %1) %2) args arg-types)]
     `(new ~c
-          ~@(if-let [^Constructor ctor (some-> target-type (get-matching-ctor arg-types))]
-              (map fixup-arg (.getParameterTypes ctor) arg-types args)
+          ~@(if-let [^Constructor ctor (some-> target-type
+                                               (get-matching-ctor coerced-arg-types))]
+              (map fixup-arg (.getParameterTypes ctor) arg-types coerced-arg-types args)
               args))))
 
 (defmacro new [c & args]
   (let [asyms (for [arg args]
                 (when-not (symbol? arg)
                   (gensym 'arg)))]
-    `(let [~@(mapcat (fn [asym arg] (when asym [asym arg])) asyms args)]
-       (new* ~c ~@(map (fn [asym arg] (or asym arg)) asyms args)))))
+    `(let [~@(mapcat (fn [asym arg]
+                       (when asym [asym (strip-tag arg)]))
+                     asyms args)]
+       (new* ~c ~@(map (fn [asym arg]
+                         (or (some-> asym (inherit-tag arg))
+                             arg))
+                       asyms args)))))
 
 (defmacro ..
   ([x form] `(power-dot.core/. ~x ~form))
