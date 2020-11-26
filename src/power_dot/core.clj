@@ -191,3 +191,6 @@
   ([x form] `(power-dot.core/. ~x ~form))
   ([x form & more]
    `(power-dot.core/.. (power-dot.core/. ~x ~form) ~@more)))
+
+(defmacro as-fn [x]
+  `(let [^clojure.lang.AFunction x# ~x] x#))
