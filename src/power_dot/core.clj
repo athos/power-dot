@@ -7,7 +7,7 @@
 
 (defn- sam-type? [^Class c]
   ;;FIXME: It's not definition of SAM type
-  (.isAnnotationPresent c java.lang.FunctionalInterface))
+  (and (some? c) (.isAnnotationPresent c java.lang.FunctionalInterface)))
 
 (defn- function-type? [c]
   (isa? c clojure.lang.AFn))
