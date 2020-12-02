@@ -5,9 +5,18 @@
            [java.lang.reflect Constructor Method Modifier]
            [java.util Arrays]))
 
-(defn- sam-type? [^Class c]
-  ;;FIXME: It's not definition of SAM type
-  (and (some? c) (.isAnnotationPresent c java.lang.FunctionalInterface)))
+(defn- functional-interface? [^Class c]
+  (and (some? c)
+       (or (.isAnnotationPresent c java.lang.FunctionalInterface)
+           (and (.isInterface c)
+                (->> (.getMethods c)
+                     (reduce (fn [n ^Method m]
+                               (if (Modifier/isAbstract (.getModifiers m))
+                                 (let [n' (inc n)]
+                                   (if (> n' 1) (reduced n') n'))
+                                 n))
+                             0)
+                     (= 1))))))
 
 (defn- function-type? [c]
   (isa? c clojure.lang.AFn))
@@ -22,7 +31,7 @@
         (if (= p a)
           (recur (next params) (next args) (inc exact))
           (when (or (Reflector/paramArgTypeMatch p a)
-                    (and (function-type? a) (sam-type? p)))
+                    (and (function-type? a) (functional-interface? p)))
             (recur (next params) (next args) exact))))
       exact)))
 
@@ -108,8 +117,8 @@
 (defn- fixup-arg [^Class param-type arg-type hinted-type arg]
   (if (and (not= param-type arg-type)
            (or (and (function-type? arg-type)
-                    (sam-type? param-type))
-               (sam-type? hinted-type))
+                    (functional-interface? param-type))
+               (functional-interface? hinted-type))
            ;; if arg type is a descedant of param type, no need to wrap arg
            ;; with anonymous adapter class
            (not (isa? arg-type param-type)))
