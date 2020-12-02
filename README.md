@@ -1,53 +1,42 @@
 # power-dot
 
-A PoC library for Clojure that helps you make friends with Java's functional interfaces
+A PoC library for Clojure that helps you make friends with Java's functional interfaces 😍
 
-## Example
+## Rationale
+
+Java 8 introduced the concept of *functional interfaces*, and Java's lambdas are designed
+to work well with them. Java's Stream API, for example, makes heavy use of functional interfaces
+and if you use lambdas in conjunction with it, the code becomes very concise and easy to read:
+
+```java
+IntStream.range(0, 10)
+    .filter(x -> x % 2 == 0)
+    .map(x -> x * x)
+    .forEach(System.out::println)
+```
+
+Unfortunately, Clojure's Java interop is not smart enough to automatically cast a Clojure
+function to a functional interface, so you'll have to wrap it in a `reify` form yourself:
+
+```clojure
+(.. (IntStream/range 0 10)
+    (filter (reify IntPredicate (test [_ x] (even? x))))
+    (map (reify IntUnaryOperator (applyAsInt [_ x] (* x x))))
+    (forEach (reify IntConsumer (accept [_ x] (println x)))))
+```
+
+This library solves the issue and helps you make friends with functional interfaces.
+It infers a matching method from the argument types at compile time, and automatically
+wrap function arguments with `reify` if necessary. Consequently, you can write concise
+code as below:
 
 ```clojure
 (require '[power-dot.core :as dot])
-(import '[java.util.stream IntStream])
-
-(dot/. (IntStream/range 0 10) (forEach (fn [x] (println x))))
-;; 0
-;; 1
-;; 2
-;; 3
-;; 4
-;; 5
-;; 6
-;; 7
-;; 8
-;; 9
-;=> nil
 
 (dot/.. (IntStream/range 0 10)
-        (filter #(= (mod % 3) 0))
+        (filter even?)
+        (map #(* % %))
         (forEach println))
-;; 0
-;; 3
-;; 6
-;; 9
-;=> nil
-
-(letfn [(fib [n]
-          (if (<= n 1)
-            n
-            (+ (fib (- n 1)) (fib (- n 2)))))]
-  (dot/.. (IntStream/range 0 10)
-          (map fib)
-          (forEach println)))
-;; 0
-;; 1
-;; 1
-;; 2
-;; 3
-;; 5
-;; 8
-;; 13
-;; 21
-;; 34
-;=> nil
 ```
 
 ## Usage
