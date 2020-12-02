@@ -1,5 +1,6 @@
 (ns power-dot.core
   (:refer-clojure :exclude [..])
+  (:require [clojure.string :as str])
   (:import [clojure.lang Compiler$LocalBinding]
            [clojure.lang Reflector]
            [java.lang.reflect Constructor Method Modifier]
@@ -203,3 +204,57 @@
 
 (defmacro as-fn [x]
   `(let [^clojure.lang.AFunction x# ~x] x#))
+
+(defn expand-ordinary-form [form]
+  (or (when (and (seq? form)
+                 (>= (count form) 2)
+                 (symbol? (first form)))
+        (let [op (first form)
+              op-name (str op)]
+          (some->
+           (cond (= op '.)
+                 `(power-dot.core/. ~@(rest form))
+
+                 (str/starts-with? op-name ".")
+                 `(power-dot.core/. ~(second form)
+                                    ~(symbol (subs op-name 1))
+                                    ~@(nnext form))
+
+                 (str/ends-with? op-name ".")
+                 `(power-dot.core/new ~(symbol (subs op-name 0 (dec (count op-name))))
+                                      ~@(rest form))
+
+                 (some-> (namespace op) symbol resolve class?)
+                 `(power-dot.core/. ~(symbol (namespace op))
+                                    ~(symbol (name op))
+                                    ~@(rest form)))
+           (with-meta (meta form)))))
+      form))
+
+(defn expand-thread-first-form [form]
+  (or (when (and (seq? form)
+                 (symbol? (first form)))
+        (let [op (first form)
+              op-name (str op)]
+          (some->
+           (cond (= op '.)
+                 `(power-dot.core/. ~@(rest form))
+
+                 (str/starts-with? op-name ".")
+                 `(power-dot.core/. ~(symbol (subs op-name 1))
+                                    ~@(rest form))
+
+                 (str/ends-with? op-name ".")
+                 `((fn [x#]
+                     (power-dot.core/new ~(symbol (subs op-name 0 (dec (count op-name))))
+                                         x#
+                                         ~@(rest form))))
+
+                 (some-> (namespace op) symbol resolve class?)
+                 `((fn [x#]
+                     (power-dot.core/. ~(symbol (namespace op))
+                                       ~(symbol (name op))
+                                       x#
+                                       ~@(rest form)))))
+           (with-meta (meta form)))))
+      form))
