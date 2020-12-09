@@ -6,13 +6,26 @@
            [java.lang.reflect Constructor Method Modifier]
            [java.util Arrays]))
 
+(def object-methods
+  (reduce (fn [ms ^Method m]
+            (update ms (.getName m) (fnil conj #{})
+                    (vec (.getParameterTypes m))))
+          {}
+          (.getMethods Object)))
+
 (defn- functional-interface? [^Class c]
   (and (some? c)
        (or (.isAnnotationPresent c java.lang.FunctionalInterface)
            (and (.isInterface c)
                 (->> (.getMethods c)
                      (reduce (fn [n ^Method m]
-                               (if (Modifier/isAbstract (.getModifiers m))
+                               ;; As described in JLS 9.8, a functional interface is allowed
+                               ;; to have one or more abstract methods inherited from Object
+                               (if (and (Modifier/isAbstract (.getModifiers m))
+                                        (not
+                                         (some-> object-methods
+                                                 (get (.getName m))
+                                                 (contains? (vec (.getParameterTypes m))))))
                                  (let [n' (inc n)]
                                    (if (> n' 1) (reduced n') n'))
                                  n))
