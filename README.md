@@ -25,10 +25,9 @@ function to a functional interface, so you'll have to wrap it in a `reify` form 
     (forEach (reify IntConsumer (accept [_ x] (println x)))))
 ```
 
-This library solves the issue and helps you make friends with functional interfaces.
-It infers a matching method from the argument types at compile time, and automatically
-wrap function arguments with `reify` if necessary. Consequently, you can write concise
-code as below:
+This library mitigates that kind of hassle and helps you make friends with functional interfaces.
+It infers a matching method from the argument types at compile time, and automatically wrap
+function arguments with `reify` if necessary. Consequently, you can write concise code as below:
 
 ```clojure
 (require '[power-dot.core :as dot])
