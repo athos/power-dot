@@ -1,4 +1,5 @@
 # power-dot
+[![Clojars Project](https://img.shields.io/clojars/v/power-dot.svg)](https://clojars.org/power-dot)
 
 A PoC library for Clojure that helps you make friends with Java's functional interfaces 😍
 
@@ -37,6 +38,12 @@ function arguments with `reify` if necessary. Consequently, you can write concis
         (map #(* % %))
         (forEach println))
 ```
+
+## Installation
+
+Add the following to your project `:dependencies`:
+
+[![Clojars Project](https://clojars.org/power-dot/latest-version.svg)](https://clojars.org/power-dot)
 
 ## Usage
 
