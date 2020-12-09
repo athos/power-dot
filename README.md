@@ -40,7 +40,48 @@ function arguments with `reify` if necessary. Consequently, you can write concis
 
 ## Usage
 
-FIXME
+### `dot/.` & `dot/new`
+
+The most fundamental operators of the library are `power-dot.core/.` and `power-dot.core/new`.
+
+They can be used in much the same way as the Clojure's counterparts (i.e. the `.` and `new` special operators),
+except that if a function is fed for a parameter where the method or constructor expects
+a functional interface, they handle the function as if it were an object implementing
+that functional interface.
+
+For example, `IntStream#forEach` expects `IntConsumer` (which is a functional interface)
+as its argument, and you can pass a function to the method via the `power-dot.core/.` macro:
+
+```clojure
+(require '[power-dot.core :as dot])
+(import '[java.util.stream IntStream])
+
+(dot/. (IntStream/range 0 10) (forEach (fn [n] (println n))))
+```
+
+In this case, the `dot/.` form will be expanded to something like the following, and
+the function successfully acts like an `IntConsumer`:
+
+```clojure
+(let [f (fn [n] (println n))]
+  (. (IntStream/range 0 10) (forEach (reify IntConsumer (accept [_ x] (f x))))))
+```
+
+You can pass a function in any form as long as the Clojure compiler statically knows
+it's a function. So, the following forms are all valid, besides the above one with `fn`:
+
+```clojure
+(dot/. (IntStream/range 0 10) (forEach #(println %)))
+
+(dot/. (IntStream/range 0 10) (forEach println))
+
+(let [p println]
+  (dot/. (IntStream/range 0 10) (forEach p)))
+```
+
+### `dot/..`
+
+### `dot/as-fn`
 
 ## License
 
