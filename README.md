@@ -88,6 +88,28 @@ it's a function. So, the following forms are all valid, besides the above one wi
 
 ### `dot/..`
 
+`power-dot` also has its own version of the `..` macro.
+
+Analogous to the `..` macro in `clojure.core`, the `power-dot.core/..` form is expanded to
+a chain of `power-dot.core/.` invocations. It's useful to use in the context of
+"fluent interface" (or method chaining) with heavy use of functional interfaces:
+
+```clojure
+(dot/.. (ArrayList. [1 2 3 4 5])
+        (stream)
+        (filter odd?)
+        (forEach println))
+```
+
+This form will be expanded to:
+
+```clojure
+(dot/. (dot/. (dot/. (ArrayList. [1 2 3 4 5])
+                     (stream)))
+              (filter odd?)
+       (forEach println))
+```
+
 ### `dot/as-fn`
 
 ## License
