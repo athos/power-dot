@@ -86,6 +86,11 @@ it's a function. So, the following forms are all valid, besides the above one wi
   (dot/. (IntStream/range 0 10) (forEach p)))
 ```
 
+**NOTE:** If `dot/.` tries to resolve the method from the provided arguments
+ending up in failure, it will fall back to Clojure's ordinary `.` and may emit
+a reflection warning. So, it's highly recommended to do `(set! *warn-on-reflection* true)`
+to be able to notice method resolution failure.
+
 ### `dot/..`
 
 `power-dot` also has its own version of the `..` macro.
