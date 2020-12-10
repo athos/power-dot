@@ -51,7 +51,7 @@ Add the following to your project `:dependencies`:
 
 The most fundamental operators of the library are `power-dot.core/.` and `power-dot.core/new`.
 
-They can be used in much the same way as the Clojure's counterparts (i.e. the `.` and `new` special operators),
+They can be used in much the same way as Clojure's counterparts (i.e. the `.` and `new` special operators),
 except that if a function is fed for a parameter where the method or constructor expects
 a functional interface, they handle the function as if it were an object implementing
 that functional interface.
@@ -74,7 +74,7 @@ the function successfully acts like an `IntConsumer`:
   (. (IntStream/range 0 10) (forEach (reify IntConsumer (accept [_ x] (f x))))))
 ```
 
-You can pass a function in any form as long as the Clojure compiler statically knows
+You can pass a function in any form as long as the Clojure compiler statically knows that
 it's a function. So, the following forms are all valid, besides the above one with `fn`:
 
 ```clojure
