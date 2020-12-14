@@ -91,6 +91,17 @@ ending up in failure, it will fall back to Clojure's ordinary `.` and may emit
 a reflection warning. So, it's highly recommended to do `(set! *warn-on-reflection* true)`
 to be able to notice method resolution failure.
 
+If a method resolution failed, due to eg. the method's being overloaded for more than
+one functional interface types, you may need to explicitly specify the desired type. 
+To do so, just add a type hint of the target type to the argument:
+
+```clojure
+;; To coerce `println` to `IntConsumer`, add a type hint ^IntConsumer to `println`
+;; (though, this example code doesn't need it, actually).
+
+(dot/. (IntStream/range 0 10) (forEach ^IntConsumer println))
+```
+
 ### `dot/..`
 
 `power-dot` also has its own version of the `..` macro.
