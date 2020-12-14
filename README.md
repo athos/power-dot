@@ -128,6 +128,26 @@ This form will be expanded to:
 
 ### `dot/as-fn`
 
+### Reader syntax
+
+For those who prefer Clojure's *sugared* interop syntax (i.e. `(.method obj ...)`, `(Klass/method ...)` 
+and `(Klass. ...)`) over the simplest `(. obj-or-class method ...)` and `(new Klass ...)` forms,
+`power-dot` also provides convenient reader syntax: `dot/$`.
+
+By prefixing the `dot/$` reader tag to those sugared interop forms, you can get them to work 
+exactly the same as the `dot/.` or `dot/new` form. For example:
+
+```clojure
+#dot/$(.method obj ...)
+;; expands to (dot/. obj method ...)
+
+#dot/$(Klass/method ...)
+;; expands to (dot/. Klass method ...)
+
+#dot/$(Klass. ...)
+;; expands to (dot/new Klass ...)
+```
+
 ## License
 
 Copyright © 2020 Shogo Ohta
