@@ -3,6 +3,16 @@
 
 A PoC library for Clojure that helps you make friends with Java's functional interfaces 😍
 
+## Table of Contents
+
+- [Rationale](#rationale)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [`dot/.` & `dot/new`](#dot--dotnew)
+  - [`dot/..`](#dot)
+  - [`dot/as-fn`](#dotas-fn)
+  - [Reader syntax](#reader-syntax)
+
 ## Rationale
 
 Java 8 introduced the concept of *functional interfaces*, and Java's lambdas are designed
