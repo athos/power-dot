@@ -116,8 +116,8 @@ To do so, just add a type hint of the target type to the argument:
 
 `power-dot` also has its own version of the `..` macro.
 
-Analogous to the `..` macro in `clojure.core`, the `power-dot.core/..` form is expanded to
-a chain of `power-dot.core/.` invocations. It's useful to use in the context of
+Analogous to the `..` macro defined in `clojure.core`, the `dot/..` form is expanded to
+a chain of `dot/.` invocations. It's useful to use in the context of
 "fluent interface" (or method chaining) with heavy use of functional interfaces:
 
 ```clojure
@@ -140,11 +140,23 @@ This form will be expanded to:
 
 ### Reader syntax
 
-For those who prefer Clojure's *sugared* interop syntax (i.e. `(.method obj ...)`, `(Klass/method ...)` 
-and `(Klass. ...)`) over the simplest `(. obj-or-class method ...)` and `(new Klass ...)` forms,
-`power-dot` also provides convenient reader syntax: `dot/$`.
+For those who prefer Clojure's *sugared* interop syntax, that is,
 
-By prefixing the `dot/$` reader tag to those sugared interop forms, you can get them to work 
+```clojure
+;; instance method invocation
+(.method object ...)
+
+;; class method invocation
+(Klass/method ...)
+
+;; constructor invocation
+(Klass. ...)
+```
+
+over the simplest `(. obj-or-class method ...)` and `(new Klass ...)` forms,
+`power-dot` provides convenient reader syntax: `#dot/$`.
+
+By prefixing the `#dot/$` reader tag to those sugared interop forms, you can get them to work 
 exactly the same as the `dot/.` or `dot/new` form. For example:
 
 ```clojure
