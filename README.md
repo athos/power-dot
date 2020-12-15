@@ -84,6 +84,9 @@ the function successfully acts like an `IntConsumer`:
   (. (IntStream/range 0 10) (forEach (reify IntConsumer (accept [_ x] (f x))))))
 ```
 
+`dot/new` works almost the same as `dot/.`, except that it invokes constructors
+instead of ordinary methods.
+
 You can pass a function in any form as long as the Clojure compiler statically knows that
 it's a function. So, the following forms are all valid, besides the above one with `fn`:
 
