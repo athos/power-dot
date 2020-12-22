@@ -141,6 +141,44 @@ This form will be expanded to:
 
 ### `dot/as-fn`
 
+If the Clojure compiler cannot infer the type of an argument statically, you may need to
+explicitly tell power-dot that the argument is a function.
+To do so, use `dot/as-fn` for that argument:
+
+```clojure
+;; For example, this doesn't work because the Clojure compiler cannot tell the type of
+;; the return value from `(partial println "val:")`
+
+(dot/.. (IntStream/range 0 5)
+        (forEach (partial println "val:")))
+;; Execution error (ClassCastException) at user/eval332 (REPL:1).
+;; class clojure.core$partial$fn__5839 cannot be cast to class java.util.function.IntConsumer
+
+
+;; But, this does work!!
+
+(dot/. (IntStream/range 0 5)
+       (forEach (dot/as-fn (partial println "val:"))))
+;; val: 0
+;; val: 1
+;; val: 2
+;; val: 3
+;; val: 4
+```
+
+`dot/as-fn` is also useful if you want to use a keyword (or any other types other than functions
+that implement `clojure.lang.IFn`) as a function:
+
+```clojure
+(dot/.. (ArrayList. [{:name "Rich"} {:name "Stu"} {:name "Alex"}])
+        (stream)
+        (map (dot/as-fn :name))
+        (forEach println))
+;; Rich
+;; Stu
+;; Alex
+```
+
 ### Reader syntax
 
 For those who prefer Clojure's *sugared* interop syntax, that is,
