@@ -17,7 +17,7 @@ A PoC library for Clojure that helps you make friends with Java's functional int
 
 Java 8 introduced the concept of *functional interfaces*, and Java's lambdas are designed
 to work well with them. Java's Stream API, for example, makes heavy use of functional interfaces
-and if you use lambdas in conjunction with it, the code becomes very concise and easy to read:
+and if you use it in conjunction with lambdas, the code becomes very concise and easy to read:
 
 ```java
 IntStream.range(0, 10)
@@ -67,7 +67,8 @@ a functional interface, they handle the function as if it were an object impleme
 that functional interface.
 
 For example, `IntStream#forEach` expects `IntConsumer` (which is a functional interface)
-as its argument, and you can pass a function to the method via the `power-dot.core/.` macro:
+as its argument, and you can pass a Clojure function to the method via
+the `power-dot.core/.` macro:
 
 ```clojure
 (require '[power-dot.core :as dot])
@@ -104,13 +105,13 @@ ending up in failure, it will fall back to Clojure's ordinary `.` and may emit
 a reflection warning. So, it's highly recommended to do `(set! *warn-on-reflection* true)`
 to be able to notice method resolution failure.
 
-If a method resolution failed, due to eg. the method's being overloaded for more than
+If a method resolution failed, due to e.g. the method's being overloaded for more than
 one functional interface types, you may need to explicitly specify the desired type. 
 To do so, just add a type hint of the target type to the argument:
 
 ```clojure
 ;; To coerce `println` to `IntConsumer`, add a type hint ^IntConsumer to `println`
-;; (though, this example code doesn't need it, actually).
+;; (this example code actually doesn't need it, though).
 
 (dot/. (IntStream/range 0 10) (forEach ^IntConsumer println))
 ```
@@ -142,7 +143,7 @@ This form will be expanded to:
 ### `dot/as-fn`
 
 If the Clojure compiler cannot infer the type of an argument statically, you may need to
-explicitly tell power-dot that the argument is a function.
+explicitly tell `power-dot` that the argument is a function.
 To do so, use `dot/as-fn` for that argument:
 
 ```clojure
@@ -155,7 +156,7 @@ To do so, use `dot/as-fn` for that argument:
 ;; class clojure.core$partial$fn__5839 cannot be cast to class java.util.function.IntConsumer
 
 
-;; But, this does work!!
+;; But, this one does work!!
 
 (dot/. (IntStream/range 0 5)
        (forEach (dot/as-fn (partial println "val:"))))
