@@ -3,20 +3,32 @@
             [clojure.test :refer [deftest is]]
             [power-dot.core :as dot])
   (:import [java.util ArrayList Optional]
-           [java.util.stream IntStream]))
+           [java.util.stream Collectors IntStream]))
 
 (deftest functional-interface?-test
   (is (#'dot/functional-interface? java.util.function.Function))
   (is (#'dot/functional-interface? Iterable))
-  (is (not (#'dot/functional-interface? java.util.Iterator)))
-  (is (not (#'dot/functional-interface? String))))
+  (is (not (#'dot/functional-interface? nil)))
+  (is (not (#'dot/functional-interface? String)))
+  (is (not (#'dot/functional-interface? java.util.Iterator))))
 
 (deftest dot-test
-  (is (= "FOO" 
+  (is (= "FOO"
          (-> (Optional/of "foo")
              (dot/. map str/upper-case)
              (.get))))
-  (is (= 45 (dot/. (IntStream/range 0 10) (reduce 0 +)))))
+  (is (= 45 (dot/. (IntStream/range 0 10) (reduce 0 +))))
+  (is (= 25
+         (-> (IntStream/range 3 5)
+             (dot/. reduce 0 #(+ %1 (* %2 %2))))))
+  (is (= 20
+         (-> (IntStream/range 0 5)
+             (dot/. map ^java.util.function.Function (partial * 2))
+             (.sum))))
+  (is (= 15
+         (-> (ArrayList. [1 2 3 4 5])
+             (.stream)
+             (.collect (dot/. Collectors reducing 0 +))))))
 
 (deftest dotdot-test
   (is (= (apply + [1 3 5 7 9])
