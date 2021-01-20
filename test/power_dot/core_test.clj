@@ -12,6 +12,23 @@
   (is (not (#'dot/functional-interface? String)))
   (is (not (#'dot/functional-interface? java.util.Iterator))))
 
+(defmacro infer [sym]
+  (#'dot/infer-type &env sym))
+
+(def ^String s "foo")
+(def ^ints arr (int-array 0))
+(def ^"[J" arr' (long-array 0))
+
+(deftest infer-type-test
+  (is (= (class +) (infer +)))
+  (is (= String (infer s)))
+  (is (= (Class/forName "[I") (infer arr)))
+  (is (= (Class/forName "[J") (infer arr')))
+  (let [d 12.3]
+    (is (= Double/TYPE (infer d))))
+  (is (= Class (infer Optional)))
+  (is (= Class (infer java.util.UUID))))
+
 (deftest dot-test
   (is (= "FOO"
          (-> (Optional/of "foo")
