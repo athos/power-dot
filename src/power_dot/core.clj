@@ -113,17 +113,28 @@
             ctor-idx (get-matching-params (.getName target-type) param-lists args rets)]
         (when (>= ctor-idx 0) (nth ctors ctor-idx))))))
 
-(defn- infer-type [&env sym]
-  (let [^Compiler$LocalBinding lb (get &env sym)]
-    (when (.hasJavaClass lb)
-      (.getJavaClass lb))))
+(def ^:private array-fn->desc
+  {booleans "[Z", bytes "[B", chars "[C"
+   shorts "[S", ints "[I", longs "[J"
+   floats "[F", doubles "[D"})
 
-(defn- infer-arg-type [&env sym]
+(defn- infer-type [&env sym]
   (if (contains? &env sym)
-    (infer-type &env sym)
+    (let [^Compiler$LocalBinding lb (get &env sym)]
+      (when (.hasJavaClass lb)
+        (.getJavaClass lb)))
     (when-let [v (resolve sym)]
-      (when (and (var? v) (function-type? (class @v)))
-        (class @v)))))
+      (cond (var? v)
+            (cond (function-type? (class @v))
+                  (class @v)
+
+                  (:tag (meta v))
+                  (as-> (:tag (meta v)) t
+                    (or (array-fn->desc t) t)
+                    (if (string? t) (Class/forName t) t)))
+
+            (class? v)
+            Class))))
 
 (defn- hinted-arg-type [arg]
   (some-> arg meta :tag resolve))
@@ -157,7 +168,7 @@
 
 (defmacro dot* [static? target method-name & args]
   (let [target-type (if static? (resolve target) (infer-type &env target))
-        arg-types (map (partial infer-arg-type &env) args)
+        arg-types (map (partial infer-type &env) args)
         coerced-arg-types (map #(or (hinted-arg-type %1) %2) args arg-types)]
     `(. ~target ~method-name
         ~@(if-let [^Method m (when target-type
@@ -190,7 +201,7 @@
 
 (defmacro new* [c & args]
   (let [target-type (resolve c)
-        arg-types (map (partial infer-arg-type &env) args)
+        arg-types (map (partial infer-type &env) args)
         coerced-arg-types (map #(or (hinted-arg-type %1) %2) args arg-types)]
     `(new ~c
           ~@(if-let [^Constructor ctor (some-> target-type
