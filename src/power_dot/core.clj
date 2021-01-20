@@ -184,20 +184,25 @@
     (let [[mname & args] args
           static? (and (symbol? target)
                        (class? (resolve target)))
-          tsym (gensym 'target)
+          tsym (when (and (not static?)
+                          (not (symbol? target)))
+                 (gensym 'target))
           asyms (for [arg args]
                   (when-not (symbol? arg)
-                    (gensym 'arg)))]
-      `(let [~@(when-not static?
-                 [tsym target])
-             ~@(mapcat (fn [asym arg]
-                         (when asym [asym (strip-tag arg)]))
-                       asyms args)]
-         (dot* ~static? ~(if static? target tsym) ~mname
-               ~@(map (fn [asym arg]
-                        (or (some-> asym (inherit-tag arg))
-                            arg))
-                      asyms args))))))
+                    (gensym 'arg)))
+          expanded `(dot* ~static? ~(or tsym target) ~mname
+                          ~@(map (fn [asym arg]
+                                   (or (some-> asym (inherit-tag arg))
+                                       arg))
+                                 asyms args))
+          inits (mapcat (fn [asym arg]
+                          (when asym [asym (strip-tag arg)]))
+                        asyms args)]
+      (if (or tsym (seq inits))
+        `(let [~@(when tsym [tsym target])
+               ~@inits]
+           ~expanded)
+        expanded))))
 
 (defmacro new* [c & args]
   (let [target-type (resolve c)
@@ -212,14 +217,17 @@
 (defmacro new [c & args]
   (let [asyms (for [arg args]
                 (when-not (symbol? arg)
-                  (gensym 'arg)))]
-    `(let [~@(mapcat (fn [asym arg]
-                       (when asym [asym (strip-tag arg)]))
-                     asyms args)]
-       (new* ~c ~@(map (fn [asym arg]
-                         (or (some-> asym (inherit-tag arg))
-                             arg))
-                       asyms args)))))
+                  (gensym 'arg)))
+        expanded `(new* ~c ~@(map (fn [asym arg]
+                                    (or (some-> asym (inherit-tag arg))
+                                        arg))
+                                  asyms args))
+        inits (mapcat (fn [asym arg]
+                        (when asym [asym (strip-tag arg)]))
+                      asyms args)]
+    (if (seq inits)
+      `(let [~@inits] ~expanded)
+      expanded)))
 
 (defmacro ..
   ([x form] `(power-dot.core/. ~x ~form))
