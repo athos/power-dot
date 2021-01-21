@@ -1,5 +1,7 @@
 # power-dot
 [![Clojars Project](https://img.shields.io/clojars/v/power-dot.svg)](https://clojars.org/power-dot)
+![build](https://github.com/athos/power-dot/workflows/build/badge.svg)
+[![codecov](https://codecov.io/gh/athos/power-dot/branch/main/graph/badge.svg?token=W0F2GH2J2M)](https://codecov.io/gh/athos/power-dot)
 
 A PoC library for Clojure that helps you make friends with Java's functional interfaces 😍
 
