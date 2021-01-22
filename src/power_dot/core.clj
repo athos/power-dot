@@ -113,28 +113,44 @@
             ctor-idx (get-matching-params (.getName target-type) param-lists args rets)]
         (when (>= ctor-idx 0) (nth ctors ctor-idx))))))
 
-(def ^:private array-fn->desc
-  {booleans "[Z", bytes "[B", chars "[C"
-   shorts "[S", ints "[I", longs "[J"
-   floats "[F", doubles "[D"})
+(def ^:private array-type-tags
+  '{booleans "[Z", bytes "[B", chars "[C"
+    shorts "[S", ints "[I", longs "[J"
+    floats "[F", doubles "[D"
+    objects "[Ljava.lang.Object;"})
+
+(def ^:private array-fn->array-type
+  {booleans 'booleans, bytes 'bytes, chars 'chars
+   shorts 'shorts, ints 'ints, longs 'longs
+   floats 'floats, doubles 'doubles})
+
+(defn- resolve-tag [t]
+  (cond (symbol? t)
+        (if-let [t' (array-type-tags t)]
+          (recur t')
+          (let [v (resolve t)]
+            (when (class? v)
+              v)))
+
+        (string? t) (Class/forName t)
+        (class? t) t
+        (fn? t) (recur (array-fn->array-type t))))
 
 (defn- infer-type [&env sym]
-  (if (contains? &env sym)
-    (let [^Compiler$LocalBinding lb (get &env sym)]
+  (if-let [t (:tag (meta sym))]
+    (resolve-tag t)
+    (if-let [^Compiler$LocalBinding lb (get &env sym)]
       (when (.hasJavaClass lb)
-        (.getJavaClass lb)))
-    (when-let [v (resolve sym)]
-      (cond (var? v)
-            (cond (function-type? (class @v))
-                  (class @v)
+        (.getJavaClass lb))
+      (when-let [v (resolve sym)]
+        (cond (var? v)
+              (if (function-type? (class @v))
+                (class @v)
+                (when-let [t (:tag (meta v))]
+                  (resolve-tag t)))
 
-                  (:tag (meta v))
-                  (as-> (:tag (meta v)) t
-                    (or (array-fn->desc t) t)
-                    (if (string? t) (Class/forName t) t)))
-
-            (class? v)
-            Class))))
+              (class? v)
+              Class)))))
 
 (defn- hinted-arg-type [arg]
   (some-> arg meta :tag resolve))
