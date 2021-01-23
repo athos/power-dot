@@ -153,7 +153,7 @@
               Class)))))
 
 (defn- hinted-arg-type [arg]
-  (some-> arg meta :tag resolve))
+  (some-> arg meta :tag resolve-tag))
 
 (defn- fixup-arg [^Class param-type arg-type hinted-type arg]
   (if (and (not= param-type arg-type)
