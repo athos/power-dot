@@ -184,7 +184,7 @@
 
 (defmacro dot* [static? target method-name & args]
   (let [target-type (if static? (resolve target) (infer-type &env target))
-        arg-types (map (partial infer-type &env) args)
+        arg-types (map #(infer-type &env (strip-tag %)) args)
         coerced-arg-types (map #(or (hinted-arg-type %1) %2) args arg-types)]
     `(. ~target ~method-name
         ~@(if-let [^Method m (when target-type
@@ -222,7 +222,7 @@
 
 (defmacro new* [c & args]
   (let [target-type (resolve c)
-        arg-types (map (partial infer-type &env) args)
+        arg-types (map #(infer-type &env (strip-tag %)) args)
         coerced-arg-types (map #(or (hinted-arg-type %1) %2) args arg-types)]
     `(new ~c
           ~@(if-let [^Constructor ctor (some-> target-type
