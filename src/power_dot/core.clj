@@ -159,17 +159,23 @@
   (if (and (not= param-type arg-type)
            (or (and (function-type? arg-type)
                     (functional-interface? param-type))
-               (functional-interface? hinted-type))
-           ;; if arg type is a descedant of param type, no need to wrap arg
-           ;; with anonymous adapter class
-           (not (isa? arg-type param-type)))
-    (let [^Method m (->> (.getMethods param-type)
-                         (filter #(Modifier/isAbstract (.getModifiers ^Method %)))
-                         first)
-          param-syms (repeatedly (.getParameterCount m) (partial gensym 'param))]
-      `(reify ~(symbol (.getName param-type))
-         (~(symbol (.getName m)) [_# ~@param-syms]
-          (~(with-meta arg nil) ~@param-syms))))
+               (functional-interface? hinted-type)))
+    (if (isa? arg-type param-type)
+      ;; if arg type is a descedant of param type, no need to wrap arg
+      ;; with anonymous adapter class
+      (let [t (symbol (.getName param-type))]
+        (if (instance? clojure.lang.IObj arg)
+          (vary-meta arg assoc :tag t)
+          (let [asym (gensym 'arg)]
+            `(let [~(with-meta asym {:tag t}) ~arg]
+               ~asym))))
+      (let [^Method m (->> (.getMethods param-type)
+                           (filter #(Modifier/isAbstract (.getModifiers ^Method %)))
+                           first)
+            param-syms (repeatedly (.getParameterCount m) (partial gensym 'param))]
+        `(reify ~(symbol (.getName param-type))
+           (~(symbol (.getName m)) [_# ~@param-syms]
+             (~(with-meta arg nil) ~@param-syms)))))
     arg))
 
 (defn- strip-tag [x]
