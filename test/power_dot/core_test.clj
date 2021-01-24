@@ -2,7 +2,7 @@
   (:require [clojure.string :as str]
             [clojure.test :refer [deftest is]]
             [power-dot.core :as dot])
-  (:import [java.util ArrayList Optional]
+  (:import [java.util ArrayList Optional TreeSet]
            [java.util.concurrent ForkJoinPool]
            [java.util.stream Collectors IntStream]))
 
@@ -60,6 +60,20 @@
   (let [xs (ArrayList. [3 1 4 1 5])]
     (dot/. java.util.Collections (sort xs compare))
     (is (= [1 1 3 4 5] xs))))
+
+(deftest new-test
+  (let [m (dot/new TreeSet compare)]
+    (is (= compare (.comparator m))))
+  (let [s (dot/new TreeSet #(< (count %1) (count %2)))]
+    (.add s "clojure")
+    (.add s "java")
+    (.add s "kotlin")
+    (.add s "scala")
+    (is (= ["java" "scala" "kotlin" "clojure"] (seq (.toArray s)))))
+  (let [acc (dot/new java.util.concurrent.atomic.LongAccumulator + 0)]
+    (dotimes [i 5]
+      (.accumulate acc i))
+    (is (= 10 (.get acc)))))
 
 (deftest dotdot-test
   (is (= (apply + [1 3 5 7 9])
