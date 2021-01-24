@@ -24,6 +24,8 @@
   (is (= (class +) (infer +)))
   (is (= String (infer s)))
   (is (= CharSequence (infer ^CharSequence s)))
+  (is (= String (infer java.io.File/separator)))
+  (is (= CharSequence (infer ^CharSequence java.io.File/separator)))
   (is (= (Class/forName "[I") (infer arr)))
   (is (= (Class/forName "[J") (infer arr')))
   (let [d 12.3]

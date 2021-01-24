@@ -3,7 +3,7 @@
   (:require [clojure.string :as str])
   (:import [clojure.lang Compiler$LocalBinding]
            [clojure.lang Reflector]
-           [java.lang.reflect Constructor Method Modifier]
+           [java.lang.reflect Constructor Field Method Modifier]
            [java.util Arrays]))
 
 (def object-methods
@@ -142,7 +142,7 @@
     (if-let [^Compiler$LocalBinding lb (get &env sym)]
       (when (.hasJavaClass lb)
         (.getJavaClass lb))
-      (when-let [v (resolve sym)]
+      (if-let [v (resolve sym)]
         (cond (var? v)
               (if (function-type? (class @v))
                 (class @v)
@@ -150,7 +150,11 @@
                   (resolve-tag t)))
 
               (class? v)
-              Class)))))
+              Class)
+        (when-let [c (some-> (namespace sym) symbol resolve)]
+          (when (class? c)
+            (when-let [^Field field (.getField c (name sym))]
+              (.getType field))))))))
 
 (defn- hinted-arg-type [arg]
   (some-> arg meta :tag resolve-tag))
