@@ -289,6 +289,16 @@
            (with-meta (meta form)))))
       form))
 
+(defmacro %flipped-dot
+  "Do not call this directly."
+  [x c m & args]
+  `(power-dot.core/. ~c ~m ~x ~@args))
+
+(defmacro %flipped-new
+  "Do not call this directly."
+  [x c & args]
+  `(power-dot.core/new ~c ~x ~@args))
+
 (defn expand-thread-first-form [form]
   (or (when (and (seq? form)
                  (symbol? (first form)))
@@ -303,16 +313,12 @@
                                     ~@(rest form))
 
                  (str/ends-with? op-name ".")
-                 `((fn [x#]
-                     (power-dot.core/new ~(symbol (subs op-name 0 (dec (count op-name))))
-                                         x#
-                                         ~@(rest form))))
+                 `(%flipped-new ~(symbol (subs op-name 0 (dec (count op-name))))
+                                ~@(rest form))
 
                  (some-> (namespace op) symbol resolve class?)
-                 `((fn [x#]
-                     (power-dot.core/. ~(symbol (namespace op))
-                                       ~(symbol (name op))
-                                       x#
-                                       ~@(rest form)))))
+                 `(%flipped-dot ~(symbol (namespace op))
+                                ~(symbol (name op))
+                                ~@(rest form)))
            (with-meta (meta form)))))
       form))
