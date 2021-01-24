@@ -1,9 +1,10 @@
 (ns power-dot.core-test
   (:require [clojure.string :as str]
-            [clojure.test :refer [deftest is]]
+            [clojure.test :refer [deftest is testing]]
             [power-dot.core :as dot])
-  (:import [java.util ArrayList Optional TreeSet]
+  (:import [java.util ArrayList Collections Optional TreeSet]
            [java.util.concurrent ForkJoinPool]
+           [java.util.concurrent.atomic LongAccumulator]
            [java.util.stream Collectors IntStream]))
 
 (deftest functional-interface?-test
@@ -58,7 +59,7 @@
              (.stream)
              (.collect (dot/. Collectors reducing 0 +)))))
   (let [xs (ArrayList. [3 1 4 1 5])]
-    (dot/. java.util.Collections (sort xs compare))
+    (dot/. Collections (sort xs compare))
     (is (= [1 1 3 4 5] xs))))
 
 (deftest new-test
@@ -70,7 +71,7 @@
     (.add s "kotlin")
     (.add s "scala")
     (is (= ["java" "scala" "kotlin" "clojure"] (seq (.toArray s)))))
-  (let [acc (dot/new java.util.concurrent.atomic.LongAccumulator + 0)]
+  (let [acc (dot/new LongAccumulator + 0)]
     (dotimes [i 5]
       (.accumulate acc i))
     (is (= 10 (.get acc)))))
@@ -93,3 +94,30 @@
              (dot/. (map (dot/as-fn :val)))
              (.toArray)
              seq))))
+
+(deftest reader-syntax-test
+  (testing "#dot/$"
+    (is (= 55 (.sum #dot/$(.map (IntStream/range 0 10) inc))))
+    (let [m #dot/$(TreeSet. compare)]
+      (is (= compare (.comparator m))))
+    (let [xs (ArrayList. [3 1 4 1 5])]
+      #dot/$(Collections/sort xs compare)
+      (is (= [1 1 3 4 5] xs)))
+    (is (= "FOO" (.get #dot/$(. (Optional/of "foo") (map str/upper-case))))))
+  (testing "#dot/>"
+    (is (= 55
+           (-> (IntStream/range 0 10)
+               #dot/>(.map inc)
+               (.sum))))
+    (let [acc (-> (fn [acc x] (+ acc (* x x)))
+                  #dot/>(LongAccumulator. 0))]
+      (dotimes [i 5]
+        (.accumulate acc i))
+      (is (= (apply + (map #(* % %) (range 0 5))) (.get acc))))
+    (is (= [1 1 3 4 5]
+           (doto (ArrayList. [3 1 4 1 5])
+             #dot/>(Collections/sort compare))))
+    (is (= "FOO"
+           (-> (Optional/of "foo")
+               #dot/>(. map str/upper-case)
+               (.get))))))
