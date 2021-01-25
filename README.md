@@ -3,7 +3,7 @@
 ![build](https://github.com/athos/power-dot/workflows/build/badge.svg)
 [![codecov](https://codecov.io/gh/athos/power-dot/branch/main/graph/badge.svg?token=W0F2GH2J2M)](https://codecov.io/gh/athos/power-dot)
 
-A PoC library for Clojure that helps you make friends with Java's functional interfaces 😍
+Clojure library for enhanced Java interop that helps you make friends with Java's functional interfaces 😍
 
 ## Table of Contents
 
