@@ -65,7 +65,7 @@ The most fundamental operators of the library are `power-dot.core/.` and `power-
 
 They can be used in much the same way as Clojure's counterparts (i.e. the `.` and `new` special operators),
 except that if a function is fed for a parameter where the method or constructor expects
-a functional interface, they handle the function as if it were an object implementing
+a functional interface, they handle the function as if it were an implementation of
 that functional interface.
 
 For example, `IntStream#forEach` expects `IntConsumer` (which is a functional interface)
@@ -90,7 +90,7 @@ the function successfully acts like an `IntConsumer`:
 `dot/new` works almost the same as `dot/.`, except that it invokes constructors
 instead of ordinary methods.
 
-You can pass a function in any form as long as the Clojure compiler statically knows that
+You can pass a function in any form as long as the Clojure compiler statically tells that
 it's a function. So, the following forms are all valid, besides the above one with `fn`:
 
 ```clojure
@@ -122,7 +122,7 @@ To do so, just add a type hint of the target type to the argument:
 
 `power-dot` also has its own version of the `..` macro.
 
-Analogous to the `..` macro defined in `clojure.core`, the `dot/..` form is expanded to
+Analogous to the `..` macro defined in `clojure.core`, the `dot/..` form expands to
 a chain of `dot/.` invocations. It's useful to use in the context of
 "fluent interface" (or method chaining) with heavy use of functional interfaces:
 
@@ -184,7 +184,7 @@ that implement `clojure.lang.IFn`) as a function:
 
 ### Reader syntax
 
-For those who prefer Clojure's *sugared* interop syntax, that is,
+For those who prefer Clojure's "sugared" interop syntax, that is,
 
 ```clojure
 ;; instance method invocation
