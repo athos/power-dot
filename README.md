@@ -88,7 +88,20 @@ the function successfully acts like an `IntConsumer`:
 ```
 
 `dot/new` works almost the same as `dot/.`, except that it invokes constructors
-instead of ordinary methods.
+instead of ordinary methods:
+
+```clojure
+(import '[java.util.concurrent.atomic LongAccumulator])
+
+(def acc (dot/new LongAccumulator + 0))
+;; This expands to:
+;; (def acc
+;;   (new LongAccumulator
+;;        (reify java.util.function.LongBinaryOperator
+;;          (applyAsLong [this x y]
+;;            (+ x y))
+;;        0))
+```
 
 You can pass a function in any form as long as the Clojure compiler statically tells that
 it's a function. So, the following forms are all valid, besides the above one with `fn`:
