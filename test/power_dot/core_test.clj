@@ -17,22 +17,10 @@
 (defmacro infer [sym]
   (#'dot/infer-type &env sym))
 
-(def ^String s "foo")
-(def ^ints arr (int-array 0))
-(def ^"[J" arr' (long-array 0))
-
 (deftest infer-type-test
   (is (= (class +) (infer +)))
-  (is (= String (infer s)))
-  (is (= CharSequence (infer ^CharSequence s)))
-  (is (= String (infer java.io.File/separator)))
-  (is (= CharSequence (infer ^CharSequence java.io.File/separator)))
-  (is (= (Class/forName "[I") (infer arr)))
-  (is (= (Class/forName "[J") (infer arr')))
-  (let [d 12.3]
-    (is (= Double/TYPE (infer d))))
-  (is (= Class (infer Optional)))
-  (is (= Class (infer java.util.UUID))))
+  (letfn [(id [x] x)]
+    (is (= clojure.lang.AFunction (infer id)))))
 
 (deftest get-matching-method
   (is (= (.getMethod ForkJoinPool "submit" (into-array [Runnable]))
