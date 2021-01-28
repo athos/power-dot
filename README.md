@@ -8,6 +8,7 @@ Clojure library for enhanced Java interop that helps you make friends with Java'
 ## Table of Contents
 
 - [Rationale](#rationale)
+- [Caveats](#caveats)
 - [Installation](#installation)
 - [Usage](#usage)
   - [`dot/.` & `dot/new`](#dot--dotnew)
@@ -50,6 +51,11 @@ function arguments with `reify` if necessary. Consequently, you can write concis
         (map #(* % %))
         (forEach println))
 ```
+
+## Caveats
+
+This library uses the implicit macro argument `&env` at its core, so it may not be
+compatible with other complicated macros (such as those that do code walking).
 
 ## Installation
 
