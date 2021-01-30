@@ -2,9 +2,8 @@
   (:refer-clojure :exclude [..])
   (:require [clojure.string :as str]
             [type-infer.core :as ty])
-  (:import [clojure.lang Compiler$LocalBinding]
-           [clojure.lang Reflector]
-           [java.lang.reflect Constructor Field Method Modifier]
+  (:import [clojure.lang Reflector]
+           [java.lang.reflect Constructor Method Modifier]
            [java.util Arrays]))
 
 (def object-methods
