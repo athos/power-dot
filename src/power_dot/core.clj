@@ -19,8 +19,8 @@
            (and (.isInterface c)
                 (->> (.getMethods c)
                      (reduce (fn [n ^Method m]
-                               ;; As described in JLS 9.8, a functional interface is allowed
-                               ;; to have one or more abstract methods inherited from Object
+                               ;; As described in JLS 9.8, a functional interface is allowed to
+                               ;; have one or more methods inherited from Object other than SAM
                                (if (and (Modifier/isAbstract (.getModifiers m))
                                         (not
                                          (some-> object-methods
