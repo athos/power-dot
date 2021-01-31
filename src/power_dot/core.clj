@@ -130,12 +130,7 @@
     (if (isa? arg-type param-type)
       ;; if arg type is a descedant of param type, no need to wrap arg
       ;; with anonymous adapter class
-      (let [t (symbol (.getName param-type))]
-        (if (instance? clojure.lang.IObj arg)
-          (vary-meta arg assoc :tag t)
-          (let [asym (gensym 'arg)]
-            `(let [~(with-meta asym {:tag t}) ~arg]
-               ~asym))))
+      (vary-meta arg assoc :tag (symbol (.getName param-type)))
       (let [^Method m (->> (.getMethods param-type)
                            (filter #(Modifier/isAbstract (.getModifiers ^Method %)))
                            first)
