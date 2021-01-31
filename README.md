@@ -233,6 +233,28 @@ exactly the same as the `dot/.` or `dot/new` form. For example:
 ;; expands to (dot/new Klass ...)
 ```
 
+Note that `#dot/$` cannot be used with `doto` or thread-first macros
+(`->`, `some->` and `cond->`). This is because the expansion of `#dot/$`
+is done at read time and it is expanded into a form that is not
+compatible with them.
+
+If you want to use the reader syntax in the thread-first context,
+you can use `#dot/>` instead:
+
+```clojure
+;; This does not work
+(-> (IntStream/range 0 5)
+    #dot/$(.map #(* % %))
+    (.toArray))
+; Syntax error compiling at ...
+; Unable to resolve symbol: p1__7844# in this context
+
+;; But this works
+(-> (IntStream/range 0 5)
+    #dot/>(.map #(* % %))
+    (.toArray))
+```
+
 ## License
 
 Copyright © 2020 Shogo Ohta
