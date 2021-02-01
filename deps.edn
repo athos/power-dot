@@ -1,6 +1,6 @@
 {:paths ["src"]
  :deps {org.clojure/clojure {:mvn/version "1.10.2"}
-        type-infer/type-infer {:mvn/version "0.1.0"}}
+        type-infer/type-infer {:mvn/version "0.1.1"}}
  :aliases
  {:check
   {:extra-deps
